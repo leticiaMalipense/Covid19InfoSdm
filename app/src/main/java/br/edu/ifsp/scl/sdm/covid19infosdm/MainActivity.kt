@@ -1,17 +1,22 @@
 package br.edu.ifsp.scl.sdm.covid19infosdm
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import br.edu.ifsp.scl.sdm.covid19infosdm.model.dataclass.*
+import br.edu.ifsp.scl.sdm.covid19infosdm.model.dataclass.ByCountryResponseList
+import br.edu.ifsp.scl.sdm.covid19infosdm.model.dataclass.ByCountryResponseListItem
+import br.edu.ifsp.scl.sdm.covid19infosdm.model.dataclass.DayOneResponseList
+import br.edu.ifsp.scl.sdm.covid19infosdm.model.dataclass.DayOneResponseListItem
 import br.edu.ifsp.scl.sdm.covid19infosdm.viewmodel.Covid19ViewModel
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
 import kotlinx.android.synthetic.main.activity_main.*
+import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -111,7 +116,13 @@ class MainActivity : AppCompatActivity() {
                 if (viewModeTextRb.isChecked) {
                     /* Modo texto */
                     modoGrafico(ligado = false)
-                    resultTv.text = casesListToString(casesList)
+
+                    if(casesList.size > 0) {
+                        resultTv.text = casesListToString(casesList)
+                    } else {
+                        notFoundMessage()
+                        resultTv.text = ""
+                    }
                 }
                 else {
                     /* Modo gráfico */
@@ -134,16 +145,21 @@ class MainActivity : AppCompatActivity() {
                     resultGv.gridLabelRenderer.labelFormatter = DateAsXAxisLabelFormatter(this)
 
                     resultGv.gridLabelRenderer.numHorizontalLabels = 4
-                    val primeiraData = Date(pointsArrayList.first().x.toLong())
-                    val ultimaData = Date(pointsArrayList.last().x.toLong())
-                    resultGv.viewport.setMinX(primeiraData.time.toDouble())
-                    resultGv.viewport.setMaxX(ultimaData.time.toDouble())
-                    resultGv.viewport.isXAxisBoundsManual = true
+                    if(pointsArrayList.size > 0) {
+                        val primeiraData = Date(pointsArrayList.first().x.toLong())
+                        val ultimaData = Date(pointsArrayList.last().x.toLong())
+                        resultGv.viewport.setMinX(primeiraData.time.toDouble())
+                        resultGv.viewport.setMaxX(ultimaData.time.toDouble())
+                        resultGv.viewport.isXAxisBoundsManual = true
 
-                    resultGv.gridLabelRenderer.numVerticalLabels = 4
-                    resultGv.viewport.setMinY(pointsArrayList.first().y)
-                    resultGv.viewport.setMaxY(pointsArrayList.last().y)
-                    resultGv.viewport.isYAxisBoundsManual = true
+                        resultGv.gridLabelRenderer.numVerticalLabels = 4
+                        resultGv.viewport.setMinY(pointsArrayList.first().y)
+                        resultGv.viewport.setMaxY(pointsArrayList.last().y)
+                        resultGv.viewport.isYAxisBoundsManual = true
+                    } else {
+                        modoGrafico(ligado = false)
+                        notFoundMessage()
+                    }
                 }
             }
         )
@@ -181,7 +197,7 @@ class MainActivity : AppCompatActivity() {
                 DayOneResponseList::class.java -> {
                     with (it as DayOneResponseListItem) {
                         resultSb.append("Casos: ${this.cases}\n")
-                        resultSb.append("Data: ${this.date.substring(0,10)}\n\n")
+                        resultSb.append("Data: ${dateFormat(this.date.substring(0,10))}\n\n")
                     }
                 }
                 ByCountryResponseList::class.java -> {
@@ -194,12 +210,24 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         resultSb.append("Casos: ${this.cases}\n")
-                        resultSb.append("Data: ${this.date.substring(0,10)}\n\n")
+                        resultSb.append("Data: ${dateFormat(this.date.substring(0,10))}\n\n")
                     }
                 }
             }
         }
 
         return resultSb.toString()
+    }
+
+    private fun dateFormat(date: String): String {
+        val inputFormat: DateFormat = SimpleDateFormat("yyyy-MM-dd")
+        val outputFormat: DateFormat = SimpleDateFormat("dd/MMM/yyyy")
+        val date: Date = inputFormat.parse(date)
+        val outputDateStr: String = outputFormat.format(date)
+        return outputDateStr
+    }
+
+    private fun notFoundMessage() {
+        Toast.makeText(this@MainActivity, "Nenhum registro encontrado", Toast.LENGTH_SHORT).show()
     }
 }
